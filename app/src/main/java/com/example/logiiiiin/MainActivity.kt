@@ -3,39 +3,24 @@ package com.example.logiiiiin
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-val SoftPink = Color(0xFFFFC0CB)
-val LightPink = Color(0xFFFFB6C1)
-val PastelPink = Color(0xFFFFD1DC)
-val DeepPink = Color(0xFFFF1493)
+import com.example.logiiiiin.ui.theme.DeepPink
+import com.example.logiiiiin.ui.theme.SoftPink
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,15 +34,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     var currentScreen by remember { mutableStateOf("Login") }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(SoftPink, DeepPink)
-                )
-            )
+            .background(Brush.verticalGradient(colors = listOf(SoftPink, DeepPink)))
     ) {
         when (currentScreen) {
             "Login" -> LoginScreen(
@@ -65,13 +47,16 @@ fun MainScreen() {
                 onForgotPasswordClick = { currentScreen = "ResetPassword" },
                 onSignUpClick = { currentScreen = "SignUp" }
             )
-            "Home" -> HomeScreen(onLogoutClick = { currentScreen = "Login" })
-            "ResetPassword" -> ResetPasswordScreen(
-                onBackClick = { currentScreen = "Login" }
+            "Home" -> HomeScreen(
+                onLogoutClick = { currentScreen = "Login" },
+                onProductClick = { product ->
+                    selectedProduct = product
+                    currentScreen = "ProductDetail"
+                }
             )
-            "SignUp" -> SignUpScreen(
-                onBackClick = { currentScreen = "Login" }
-            )
+            "ProductDetail" -> selectedProduct?.let { product ->
+                ProductDetailScreen(product = product, onBackClick = { currentScreen = "Home" })
+            }
         }
     }
 }
@@ -82,12 +67,6 @@ fun LoginScreen(
     onForgotPasswordClick: () -> Unit,
     onSignUpClick: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var emailError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,98 +74,54 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        BasicTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                emailError = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            singleLine = true,
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (email.isEmpty()) {
-                        Text("Email", fontSize = 20.sp, color = Color.White)
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        if (emailError) {
-            Text("Invalid email format", color = Color.White, fontSize = 16.sp)
-        }
-
-        BasicTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                passwordError = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (password.isEmpty()) {
-                        Text("Password", fontSize = 20.sp, color = Color.White)
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        if (passwordError) {
-            Text("Password cannot be empty", color = Color.White, fontSize = 16.sp)
-        }
-
-        // Show Password Checkbox
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = passwordVisible, onCheckedChange = { passwordVisible = it })
-            Text("Show Password", color = Color.White)
-        }
-
-        // Log In Button
+        Text("Login Screen", fontSize = 24.sp, color = Color.White)
+        Spacer(modifier = Modifier.height(16.dp))
         Button(
-            onClick = {
-                emailError = !isValidEmail(email)
-                passwordError = password.isEmpty()
-                if (!emailError && !passwordError) {
-                    onLoginSuccess() // Navigate to Home screen on successful login
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PastelPink)
+            onClick = onLoginSuccess,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
         ) {
-            Text("Log In", fontSize = 20.sp, color = Color.Black)
+            Text("Login", color = DeepPink)
         }
-
-        // Navigation Buttons
-        TextButton(onClick = onSignUpClick) {
-            Text("Sign Up", color = Color.White, fontSize = 18.sp)
-        }
-
+        Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onForgotPasswordClick) {
-            Text("Forgot Password?", color = Color.White, fontSize = 18.sp)
+            Text("Forgot Password?", color = Color.White)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = onSignUpClick) {
+            Text("Sign Up", color = Color.White)
         }
     }
 }
 
 @Composable
-fun HomeScreen(onLogoutClick: () -> Unit) {
+fun HomeScreen(onLogoutClick: () -> Unit, onProductClick: (Product) -> Unit) {
+    val productList = listOf(
+        Product(name = "Lipstick", price = 10.0, description = "Le rouge à lèvres changeant de couleur ELECTRIC GLOW d'essence réagit à la valeur pH individuelle de la peau des lèvres et, par conséquent, change de couleur.", imageUrl = R.drawable.rouge),
+        Product(name = "Highlighter", price = 20.0, description = "Un enlumineur poudre innovant qui apporte immédiatement à la peau une brillance cristal, pour offrir facilement un résultat éclatant, visiblement naturel et durable.\n", imageUrl = R.drawable.highlighter),
+        Product(name = "Mascara", price = 30.0, description = "Cils déployés et volume extrême, le mascara est l’atout glamour pour un regard de\n" +
+                "biche. Noir intense, vert sapin ou marron glacé, vos yeux se parent de couleurs pour\n" +
+                "un look sophistiqué", imageUrl = R.drawable.mascara),
+        Product(name = "Foundation", price = 40.0, description = "Le secret d’un beau maquillage est un teint parfait. Fluide ou compact, le fond de teint assure une peau parfaite instantanément.", imageUrl = R.drawable.foundation) ,
+        Product(name = "blush", price = 40.0, description = "Réveillez votre teint avec un joli blush ! Rose ou corail, il sublime votre teint tout en lui\n" +
+                "offrant lumière et chaleur.", imageUrl = R.drawable.blush)
+
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text("Welcome to Home", fontSize = 24.sp, color = Color.White)
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(productList) { product ->
+                ProductCard(product = product, onClick = { onProductClick(product) })
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = onLogoutClick,
@@ -200,237 +135,90 @@ fun HomeScreen(onLogoutClick: () -> Unit) {
     }
 }
 
-// Continue with the other screens (ResetPasswordScreen and SignUpScreen) using similar colors (PastelPink, LightPink, etc.)
-
-
-private  val nothing = null
-
 @Composable
-fun ResetPasswordScreen(onBackClick: () -> Unit) {
-    var email by remember { mutableStateOf("") }
-    var emailError by remember { mutableStateOf(false) }
-    var emailSent by remember { mutableStateOf(false) }
-
-    Column(
+fun ProductCard(product: Product, onClick: () -> Unit) {
+    Card(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(4.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Text("Reset Password", fontSize = 30.sp, color = Color.White)
-
-        if (!emailSent) {
-            // Email Field
-            BasicTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    emailError = false
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                singleLine = true,
-                decorationBox = { innerTextField ->
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        if (email.isEmpty()) {
-                            Text("Email", fontSize = 20.sp, color = LightPink)
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-            if (emailError) {
-                Text("Invalid email format", color = Color.White, fontSize = 16.sp)
-            }
-
-
-            Button(
-                onClick = {
-                    emailError = !isValidEmail(email)
-                    if (!emailError) {
-                        emailSent = true
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LightPink)
-            ) {
-                Text("Reset Password", fontSize = 20.sp, color = Color.Black)
-            }
-        } else {
-            Text(
-                "A password reset link has been sent to $email",
-                fontSize = 18.sp,
-            )
-        }
-
-
-        TextButton(onClick = onBackClick) {
-            Text("Back to Login", color = Color.White, fontSize = 18.sp)
-        }
-    }
-}
-
-@Composable
-fun SignUpScreen(onBackClick: () -> Unit) {
-    var name by remember { mutableStateOf("") } // New Name field
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var nameError by remember { mutableStateOf(false) }
-    var emailError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
-    var confirmPasswordError by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Sign Up", fontSize = 30.sp, color = Color.White)
-
-        // Name Field
-        BasicTextField(
-            value = name,
-            onValueChange = {
-                name = it
-                nameError = false
-            },
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            singleLine = true,
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (name.isEmpty()) {
-                        Text("Name", fontSize = 20.sp, color = Color.White)
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        if (nameError) {
-            Text("Name cannot be empty", color = Color.White, fontSize = 16.sp)
-        }
-
-        // Email Field
-        BasicTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                emailError = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            singleLine = true,
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (email.isEmpty()) {
-                        Text("Email", fontSize = 20.sp, color = Color.White)
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        if (emailError) {
-            Text("Invalid email format", color = Color.White, fontSize = 16.sp) // Updated size and color
-        }
-
-        // Password Field
-        BasicTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                passwordError = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (password.isEmpty()) {
-                        Text("Password", fontSize = 20.sp, color = Color.White)
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        if (passwordError) {
-            Text("Password cannot be empty", color = Color.White, fontSize = 16.sp) // Updated size and color
-        }
-
-
-        BasicTextField(
-            value = confirmPassword,
-            onValueChange = {
-                confirmPassword = it
-                confirmPasswordError = false
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            decorationBox = { innerTextField ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (confirmPassword.isEmpty()) {
-                        Text("Confirm Password", fontSize = 20.sp, color = Color.White)
-                    }
-                    innerTextField()
-                }
-            }
-        )
-        if (confirmPasswordError) {
-            Text("Passwords do not match", color =Color.White, fontSize = 16.sp)
-        }
-
-        // Show Password Checkbox
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = passwordVisible, onCheckedChange = { passwordVisible = it })
-            Text("Show Password", color = Color.White)
-        }
-
-        // Sign Up Button
-        Button(
-            onClick = {
-                nameError = name.isEmpty()
-                emailError = !isValidEmail(email)
-                passwordError = password.isEmpty()
-                confirmPasswordError = confirmPassword != password
-
-                if (!nameError && !emailError && !passwordError && !confirmPasswordError) {
-
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Sign Up", fontSize = 20.sp, color = Color.Black)
-        }
-
-        // Back Button
-        TextButton(onClick = onBackClick) {
-            Text("Back to Login", color = Color.White, fontSize = 18.sp)
+            Text(
+                text = product.name,
+                fontSize = 18.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            Image(
+                painter = painterResource(id = product.imageUrl),
+                contentDescription = product.name,
+                modifier = Modifier.size(150.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "${product.price} €",
+                fontSize = 16.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
     }
 }
 
-fun isValidEmail(email: String): Boolean {
-    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+@Composable
+fun ProductDetailScreen(product: Product, onBackClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(
+            text = product.name,
+            fontSize = 24.sp,
+            color = DeepPink,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Image(
+            painter = painterResource(id = product.imageUrl),
+            contentDescription = product.name,
+            modifier = Modifier.size(200.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "${product.price} €",
+            fontSize = 20.sp,
+            color = Color.Gray,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        Text(
+            text = product.description,
+            fontSize = 16.sp,
+            color = Color.Black,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(
+            onClick = onBackClick,
+            colors = ButtonDefaults.buttonColors(containerColor = SoftPink)
+        ) {
+            Text("Back", color = Color.Black)
+        }
+    }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    MainScreen()
-}
+data class Product(
+    val name: String,
+    val price: Double,
+    val description: String,
+    val imageUrl: Int
+)
